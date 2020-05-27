@@ -9,11 +9,9 @@ def comment_line(filename, lineno):
     with open(filename, 'r') as f_in:
         lines = f_in.readlines()
     with open(f"{filename}+", 'w') as f_out:
-        for line in lines[:lineno-1]:
-            f_out.write(line)
+        f_out.writelines(lines[:lineno-1])
         f_out.write(f"# {lines[lineno-1]}")
-        for line in lines[lineno:]:
-            f_out.write(line)
+        f_out.writelines(lines[lineno:])
 
     os.replace(f"{filename}+", filename)
 
@@ -36,7 +34,10 @@ def wrap(filename, lines_commented=0):
     except:
         tb = sys.exc_info()[2]
         stack = traceback.extract_tb(tb)
-        frame = stack[2]  # gotta get the right stack frame
+
+        # frame 0 is execfile() call, frame 1 is exec() call,
+        # frame 2 is source of error in the wrapped file
+        frame = stack[2]
 
         offending_filename = frame.filename
         offending_lineno = frame.lineno
