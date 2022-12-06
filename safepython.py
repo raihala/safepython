@@ -35,7 +35,7 @@ def comment_line(filename, lineno):
         lines = f_in.readlines()
 
     # avoid infinite loops (e.g. on unexpected EOF syntax errors)
-    # by going back a line if the offending line ha already been commented
+    # by going back a line if the offending line has already been commented
     # TODO: is it possible for this to hit index errors with lineno < 1?
     while lines[lineno-1].startswith('#'):
         lineno -= 1
