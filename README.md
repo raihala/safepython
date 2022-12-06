@@ -2,13 +2,13 @@
 
 Do you write Python code? When you execute your code, does Python throw frustrating and time-consuming errors? Try safepython! It runs your program, and if an error is thrown, it comments out the offending line and tries again (repeating as necessary).
 
-Consider the files `foo.py`:
+Consider the files foo.py:
 ```
 def foo():
     x = 0/0
     print("hello!")
 ```
-and `bar.py`:
+and bar.py:
 ```
 import foo
 
@@ -22,7 +22,7 @@ Error in bar.py:3
 Error in bar.py:4
 Executed bar.py successfully after commenting out 2 line(s)
 ```
-Nice! safepython commented out the offending lines until it was able to successfully execute the script. Now `bar.py` looks like:
+Nice! safepython commented out the offending lines until it was able to successfully execute the script. Now bar.py looks like:
 ```
 import foo
 
