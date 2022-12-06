@@ -1,8 +1,13 @@
+#!/usr/bin/env python
+
 import argparse
+import datetime
 import os
 import shutil
 import sys
 import traceback
+
+TIMESTAMP = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
 
 
 def reset_sys_modules(original_sys_modules):
@@ -17,18 +22,25 @@ def reset_sys_modules(original_sys_modules):
     for key in added_modules:
         del sys.modules[key]
     for key in altered_modules:
-        raise NotImplementedError("Don't know how to handle altered modules yet")
+        # TODO: can modules be altered?
+        raise NotImplementedError("TO DO: Handle altered modules")
 
 
 def comment_line(filename, lineno):
-    backup_filename = f"{filename}.bak"
+    backup_filename = f"{filename}.bak.{TIMESTAMP}"
     if not os.path.isfile(backup_filename):
         shutil.copy2(filename, backup_filename)
 
     with open(filename, 'r') as f_in:
         lines = f_in.readlines()
 
-    tmp_filename = f"{filename}+"
+    # avoid infinite loops (e.g. on unexpected EOF syntax errors)
+    # by going back a line if the offending line ha already been commented
+    # TODO: is it possible for this to hit index errors with lineno < 1?
+    while lines[lineno-1].startswith('#'):
+        lineno -= 1
+
+    tmp_filename = f"{filename}.tmp"
     with open(tmp_filename, 'w') as f_out:
         f_out.writelines(lines[:lineno-1])
         f_out.write(f"# {lines[lineno-1]}")
@@ -53,20 +65,27 @@ def wrap(filename, proactive=False, lines_commented=0):
     original_sys_modules = dict(sys.modules)  # will reset after exec
     try:
         execfile(filename)
-    except:
+    except Exception as e:
         tb = sys.exc_info()[2]
         stack = traceback.extract_tb(tb)
 
-        # frame 0 is execfile() call, frame 1 is exec() call,
-        # frame 2 is source of error in the wrapped file, and
-        # the last frame (-1) is the ultimate source of the error
-        if proactive:
-            frame = stack[-1]
+        # the first frame on the stack is the execfile() call,
+        # and the second frame is the exec() call. if there is
+        # a syntax error in the wrapped file, there aren't any other
+        # frames; otherwise, the third frame is the source of the error
+        # in the wrapped file, and the last frame on the stack is the
+        # ultimate source of the error.
+        if len(stack) == 2 and isinstance(e, SyntaxError):
+            offending_filename = e.filename
+            offending_lineno = e.lineno
         else:
-            frame = stack[2]
+            if proactive:
+                frame = stack[-1]
+            else:
+                frame = stack[2]
 
-        offending_filename = frame.filename
-        offending_lineno = frame.lineno
+            offending_filename = frame.filename
+            offending_lineno = frame.lineno
 
         print(f"Error in {offending_filename}:{offending_lineno}")
 
